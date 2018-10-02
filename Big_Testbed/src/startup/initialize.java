@@ -13,7 +13,7 @@ import jade.core.Agent;
 public class initialize extends Agent {
 
 	/**
-	 * 
+	 * inittest
 	 */
 	public initialize() {
 		// TODO Auto-generated constructor stub
