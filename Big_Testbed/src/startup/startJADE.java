@@ -3,14 +3,8 @@
  */
 package startup;
 
-import java.awt.Point;
-
 import jade.Boot;
-import jade.core.AID;
 import jade.core.Agent;
-import sharedInformation.PhysicalProperty;
-import sharedInformation.ProductState;
-import sharedInformation.ResourceEvent;
 
 /**
  * @author garyz
@@ -28,8 +22,14 @@ public class startJADE extends Agent {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-    	
-        String startAgents = "helloAgent:agents.HelloWorldAgent;rfid3Agent:Tags.rfid3;";
+    	String[][] agentList = {
+    			{"helloAgent","agents.HelloWorldAgent"},
+    			{"initResource","initializingAgents.InitializeResourceAgents"}
+    		};
+        String startAgents = "";
+        for (int a = 0; a < agentList.length; a++){
+        	startAgents += agentList[a][0] + ":" + agentList[a][1] + ";";
+        }
 
 		// Start JADE with the above defined agents agents.
 		String[] parameters = new String[] { "-gui", // Starts the agent management tools
@@ -38,11 +38,10 @@ public class startJADE extends Agent {
 				//"-port", "10207", // The port number for inter-platform communication
 				startAgents};
 		
-		
 		Boot.main(parameters);    
     }
 }
-
+/*
 //States 
 ProductState conv1 = new ProductState("Conveyor 1", null, new PhysicalProperty(new Point(5,0)));
 ProductState cnc1 = new ProductState("CNC 1", null, new PhysicalProperty(new Point(6,1)));
@@ -124,7 +123,7 @@ AID raPut = resourceAgents.get(0);
 ResourceEvent conv1_conv2 = new ResourceEvent(raPut, conv1, conv2, "0", 1000);
 ResourceEvent conv2_end = new ResourceEvent(raPut, conv2, end, "1", 1000);
 
-
+*/
 
 
 

@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import connectionPLC.CallAdsFuncs;
-import de.beckhoff.jni.tcads.AmsAddr;
+	//import connectionPLC.CallAdsFuncs;
+	//import de.beckhoff.jni.tcads.AmsAddr;
 import edu.uci.ics.jung.algorithms.shortestpath.DijkstraShortestPath;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import initializingAgents.ExitPlan;
@@ -62,7 +62,7 @@ public class ResourceAgent extends Agent {
 	private RASchedule RAschedule;
 
 	//PLC Communication
-	private AmsAddr addr;
+		//private AmsAddr addr;
 
 	//For initialization
 	private boolean capabilitiesSet;
@@ -103,10 +103,11 @@ public class ResourceAgent extends Agent {
 		
 		String IPaddress = (String) args[0];
 		int PLCport = Integer.parseInt((String) args[1]);
-		this.addr= new AmsAddr();
-		addr.setNetIdStringEx(IPaddress);
-		addr.setPort(PLCport);
-		
+			/* OLD PLC
+			this.addr= new AmsAddr();
+			addr.setNetIdStringEx(IPaddress);
+			addr.setPort(PLCport);
+			*/
 		//Start by waiting for capabilities and neighbors
 		this.capabilitiesSet = false;
 		this.neighborsSet = false;
@@ -273,12 +274,12 @@ public class ResourceAgent extends Agent {
 						WatchRAVariableTable watchVariableTable = (WatchRAVariableTable) msg.getContentObject();				
 						
 						for (String key:watchVariableTable.getStateMapping().keySet()) {
-							
+							/* OLD PLC
 							CallAdsFuncs caf = new CallAdsFuncs();
 							caf.openPort(addr);
 							caf.setBoolValue(key,Boolean.FALSE);
 							caf.closePort();
-							
+							*/
 							addBehaviour(new PhysicalSystemMonitoring(myAgent, key,
 									watchVariableTable.getStateMapping().get(key),
 										watchVariableTable.getMonitorPeriodMapping().get(key),
@@ -408,12 +409,12 @@ public class ResourceAgent extends Agent {
 
 		@Override
 		protected void onTick() {
-			
+			/* OLD PLC
 			CallAdsFuncs caf = new CallAdsFuncs();
 			caf.openPort(addr);
-			
-			boolean varValue = caf.readBoolValue(variable);
-
+			*/
+			boolean varValue = true;// OLD PLC caf.readBoolValue(variable);
+			//System.out.println("lastCreated: " + lastCreated + "createperiod: " +createPeriod);
 			if(varValue && notifyAgentWhenState.containsKey(productState)) {
 				//Message to inform the PA about the product state
 				
@@ -427,9 +428,9 @@ public class ResourceAgent extends Agent {
 			}
 			
 			else if (lastCreated > createPeriod && varValue && createNew) {
-				System.out.println(""+myAgent.getLocalName()+ "["+variable+"=" +varValue+"]");
+				//System.out.println(""+myAgent.getLocalName()+ "["+variable+"=" +varValue+"]");
 				String ipaName = "initializePA" + myAgent.getAID();
-				
+				System.out.println(ipaName);
 				//Get the Agent controller
 				AgentController ac;
 				try {
@@ -453,10 +454,11 @@ public class ResourceAgent extends Agent {
 				
 				lastCreated = 0;
 			}
-			
-			caf.setBoolValue(variable,Boolean.FALSE);
 			lastCreated= lastCreated+this.monitorPeriod;
+			/* OLD PLC
+			caf.setBoolValue(variable,Boolean.FALSE);
 			caf.closePort();
+			*/
 		}
 		
 	}
@@ -707,12 +709,12 @@ public class ResourceAgent extends Agent {
 	public void runEdge(ResourceEvent edge, AID productAgent) {
 		String variableName = edge.getActiveMethod().split(",")[0];
 		String variableSet = edge.getActiveMethod().split(",")[1];
-				
+		/* OLD PLC
 		CallAdsFuncs caf = new CallAdsFuncs();
 		caf.openPort(addr);
 		caf.setIntValue(variableName, Integer.parseInt(variableSet));
 		caf.closePort();
-		
+		*/
 		System.out.println(productAgent.getLocalName().substring(productAgent.getLocalName().length()-3, productAgent.getLocalName().length())+",Execution," + variableName + ",time," + getCurrentTime());
 	}
 	
@@ -773,11 +775,11 @@ public class ResourceAgent extends Agent {
 	protected int getCurrentTime() {
 		return (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
 	}
-	
+	/* OLD PLC
 	public AmsAddr getAddr() {
 		return this.addr;
 	}
-
+	*/
 	public Capabilities getResourceCapabilities() {
 		return resourceCapabilities;
 	}

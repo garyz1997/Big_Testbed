@@ -48,7 +48,7 @@ public class InitializeProductAgent extends Agent {
 			ACLMessage msg = myAgent.receive(mt);		
 			if(msg != null){
 				try {
-					//If this is a capabilities table (RA and Capabilties pair)
+					//If this is a capabilities table (RA and Capabilities pair)
 					if (msg.getContentObject().getClass().getName().contains("StartingPAParams")) {
 						
 						startingPAParams = (StartingPAParams) msg.getContentObject();
@@ -58,7 +58,7 @@ public class InitializeProductAgent extends Agent {
 						
 						AgentController ac;
 						try {
-							ac = getContainerController().createNewAgent(paName, "intelligentProduct.ProductAgent", new Object[] {"a1"});
+							ac = getContainerController().createNewAgent(paName, "productAgent.ProductAgent", new Object[] {"a1"});
 							ac.start();
 						} catch (StaleProxyException e) { e.printStackTrace();}
 						

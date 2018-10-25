@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
+import org.apache.commons.collections15.Transformer;
+
 import com.google.common.base.Function;
 
 import edu.uci.ics.jung.algorithms.shortestpath.DijkstraShortestPath;
@@ -549,9 +551,10 @@ public class ProductAgent extends Agent {
 	/** The transformer for the capabilities of the resource agent to the desires of the product agent
 	 * @return 
 	 */
-	private Function<ResourceEvent, Integer> getWeightFunction(){
-		return new Function<ResourceEvent,Integer>(){
-			public Integer apply(ResourceEvent event) {
+	private Transformer<ResourceEvent, Integer> getWeightFunction(){
+		return new Transformer<ResourceEvent,Integer>(){
+			@Override
+			public Integer transform(ResourceEvent event) {
 				return event.getEventTime();
 			}
 		};

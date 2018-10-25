@@ -140,7 +140,7 @@ public class InitializeAgents extends Agent {
 			myAgent.doWait(5000);
 			AgentController ac;
 			try {
-				ac = getContainerController().createNewAgent("ProductAgent", "intelligentProduct.ProductAgent", new Object[] {"a1"});
+				ac = getContainerController().createNewAgent("ProductAgent", "productAgent.ProductAgent", new Object[] {"a1"});
 				ac.start();
 			} catch (StaleProxyException e) { e.printStackTrace();}
 			

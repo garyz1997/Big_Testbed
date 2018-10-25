@@ -110,7 +110,7 @@ public class InitializeResourceAgents extends Agent {
 				//Create the agent
 				try {
 					AgentController ac = getContainerController().createNewAgent(raName,
-							"resourceAgent.ConveyorAgent", new Object[] {ip,PLCPort});
+							"resourceAgent.ResourceAgent", new Object[] {ip,PLCPort});
 					ac.start();
 				} catch (StaleProxyException e) {
 					e.printStackTrace();
