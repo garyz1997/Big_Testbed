@@ -7,9 +7,9 @@ import jade.core.behaviours.WakerBehaviour;
 import sharedInformation.RequestSchedule;
 import sharedInformation.ResourceEvent;
 
-public class ConveyorAgent extends ResourceAgent{
+public class CNCAgent extends ResourceAgent{
 
-	private static final long serialVersionUID = 7080006178159083214L;
+	
 	
 	@Override
 	public void runEdge(ResourceEvent edge, AID productAgent) {
@@ -31,7 +31,6 @@ public class ConveyorAgent extends ResourceAgent{
 	}
 	
 	public class resetSignal extends WakerBehaviour {
-		private static final long serialVersionUID = 6800760293776896340L;
 		private final ResourceEvent desiredEdge;
 
 		public resetSignal(Agent a, long timeout, ResourceEvent desiredEdge) {

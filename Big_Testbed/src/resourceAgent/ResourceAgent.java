@@ -83,6 +83,7 @@ public class ResourceAgent extends Agent {
 	 * @param resourceCapabilities
 	 */
 	protected void setup(){
+		System.out.println("CREATED: ResourceAgent "+getAID().getName());
 		//Initialize everything
 		this.working = false;
 		this.setResourceCapabilities(new Capabilities());

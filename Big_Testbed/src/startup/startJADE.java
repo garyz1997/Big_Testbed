@@ -24,7 +24,7 @@ public class startJADE extends Agent {
     public static void main(String[] args) {
     	String[][] agentList = {
     			{"helloAgent","agents.HelloWorldAgent"},
-    			{"initResource","initializingAgents.InitializeResourceAgents"}
+    			{"InitializeResourceAgent","initializingAgents.InitializeResourceAgents"}
     		};
         String startAgents = "";
         for (int a = 0; a < agentList.length; a++){
