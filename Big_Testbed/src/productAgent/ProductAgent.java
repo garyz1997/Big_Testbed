@@ -68,9 +68,11 @@ public class ProductAgent extends Agent {
 	private int lastActionQueriedTime;
 	private final int actionTimeout = 15000;
 	
+	private String reason;
 	public ProductAgent(){}
 	
 	protected void setup(){
+		System.out.println("CREATED: ProductAgent "+getAID().getLocalName());
 		
 		// Get information about the product through the arguments
 		Object[] args = getArguments();
@@ -188,7 +190,8 @@ public class ProductAgent extends Agent {
 		@Override
 		public void action() {
 			if (finishedTask.equals("Exploration")) {
-				if (newEnvironmentModel.isEmpty()) {exit();}
+				System.out.println("Exploration finished for: " +myAgent.getLocalName());
+				if (newEnvironmentModel.isEmpty()) {exit("Empty Environmental Model from Exploration phase");}
 				else {
 					environmentModel.clear();
 					environmentModel.update(newEnvironmentModel,newEnvironmentModel.getCurrentState());
@@ -197,14 +200,14 @@ public class ProductAgent extends Agent {
 				}
 			}
 			else if (finishedTask.equals("Planning")) {
-				if (newPlan.isEmpty(getCurrentTime())) {exit();}
+				if (newPlan.isEmpty(getCurrentTime())) {exit("No new pla from Planning phase");}
 				else {
 					plan = newPlan;
 					myAgent.addBehaviour(new Execution());
 				}
 			}
 			else if (finishedTask.equals("Execution")) {
-				if (getDesiredProperties().isEmpty()) {exit();}
+				if (getDesiredProperties().isEmpty()) {exit("No desired properties left from Execution phase");}
 				else {
 					myAgent.addBehaviour(new Exploration());
 				}
@@ -212,12 +215,15 @@ public class ProductAgent extends Agent {
 		}
 	}
 	
-	private void exit() { 
+	private void exit(String reason) { 
 		//Replace with exit plan
-		System.out.println(this.getLocalName() + "called Exit Plan");
+		this.reason = reason;
 		doDelete();
 	}
-	
+	protected void takeDown() {
+		// Printout a dismissal message
+		System.out.println("DELETED: "+getAID().getLocalName()+" ["+reason+"]");
+	}
 	//================================================================================
     // Decision Director - Working with KB
     //================================================================================
@@ -280,7 +286,7 @@ public class ProductAgent extends Agent {
 				catch (IOException e) {e.printStackTrace();}
 				send(msg);
 				
-				System.out.println(getLocalName().substring(getLocalName().length()-3, getLocalName().length()) + ",Exploration_start," + getCurrentTime());
+				System.out.println(getLocalName() + ",Exploration_start," + getCurrentTime());
 			
 				//Wait for bids to come in
 				addBehaviour(new CheckExploration(myAgent,explorationWaitTime,acceptBidsBehaviour));
@@ -346,7 +352,7 @@ public class ProductAgent extends Agent {
 				try {
 					if (msg.getContentObject().getClass().getName().contains("Bid")) {
 						bids.add((Bid) msg.getContentObject());
-						System.out.println(getLocalName().substring(getLocalName().length()-3, getLocalName().length()) + ",Exploration_end," + getCurrentTime() + ", bid size: " + ((Bid) msg.getContentObject()).getEdgeCount());
+						System.out.println(getLocalName() + ",Exploration_end," + getCurrentTime() + ", bid size: " + ((Bid) msg.getContentObject()).getEdgeCount());
 					}
 
 					else {
@@ -497,7 +503,7 @@ public class ProductAgent extends Agent {
 			catch (IOException e) {e.printStackTrace();}
 			send(msg);
 			
-			System.out.println(getLocalName().substring(getLocalName().length()-3, getLocalName().length()) + ",Planning," + getCurrentTime());
+			System.out.println(getLocalName() + ",Planning," + getCurrentTime());
 			
 			//NEED CHECK IF THIS DOESN'T WORK
 			
@@ -661,7 +667,7 @@ public class ProductAgent extends Agent {
 			catch (IOException e) {e.printStackTrace();}
 			send(msg);
 			
-			System.out.println(getLocalName().substring(getLocalName().length()-3, getLocalName().length()) + ",Execution," + getCurrentTime());
+			System.out.println(getLocalName() + ",Execution," + getCurrentTime());
 			
 			myAgent.addBehaviour(new checkForNoRaResponse(myAgent,
 					requestAction.getQueriedEdge().getEventTime()+actionTimeout, lastActionQueriedTime));
@@ -686,7 +692,7 @@ public class ProductAgent extends Agent {
 		protected void onWake (){
 			if (checkActionQueriedTime==lastActionQueriedTime) {
 				System.out.println("No response from RAs for" + myAgent.getLocalName());
-				exit();
+				exit("No response from RAs");
 			}
 		}
 	}

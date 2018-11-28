@@ -33,6 +33,7 @@ public class InitializeProductAgent extends Agent {
 	}
 
 	protected void setup() {
+		System.out.println("CREATED: InitializeProductAgent "+getAID().getLocalName());
 		addBehaviour(new PASetup());
 	}
 	
@@ -54,7 +55,7 @@ public class InitializeProductAgent extends Agent {
 						startingPAParams = (StartingPAParams) msg.getContentObject();
 						
 						ProductionPlan pp = getProductionPlan();
-						String paName = "ProductAgent" + startingPAParams.getID();
+						String paName = "(PA)" + startingPAParams.getID().substring(4);
 						
 						AgentController ac;
 						try {
@@ -90,20 +91,22 @@ public class InitializeProductAgent extends Agent {
 			ProductionPlan pp = new ProductionPlan();
 
 			Random rand = new Random();
-			if (rand.nextInt(2) == 0 && startingPAParams.getID().contains("8")){
-				pp.addNewSet(new PhysicalProperty("Test3"));
+			//String paramID = startingPAParams.getID();
+			//Boolean randomSet = paramID[paramID.length()-1].equals("3");
+			if (startingPAParams.getID().charAt(startingPAParams.getID().length()-1)=='3') {//randomize part production plans TODO: remove
+				pp.addNewSet(new PhysicalProperty("p3"));
 			}
 
-			pp.addNewSet(new PhysicalProperty("End"));
+			pp.addNewSet(new PhysicalProperty("end"));
 			
-			System.out.println(startingPAParams.getID()+","+pp);
+			//System.out.println("Production plan for " + startingPAParams.getID()+":"+pp);
 			return pp;
 		}
 	}
 	
 	protected void takeDown() {
 		// Printout a dismissal message
-		System.out.println("Product setup agent is deleted.");
+		System.out.println("DELETED: "+getAID().getLocalName());
 	}
 
 }

@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -83,7 +84,7 @@ public class ResourceAgent extends Agent {
 	 * @param resourceCapabilities
 	 */
 	protected void setup(){
-		System.out.println("CREATED: ResourceAgent "+getAID().getName());
+		System.out.println("CREATED: ResourceAgent "+getAID().getLocalName());
 		//Initialize everything
 		this.working = false;
 		this.setResourceCapabilities(new Capabilities());
@@ -93,7 +94,7 @@ public class ResourceAgent extends Agent {
 		this.tableNeighborNode = new HashMap<AID, ProductState>();
 		
 		this.PAincrement = 0;
-		
+			/* OLD PLC			
 		// Get information about the PLC
 		Object[] args = getArguments();
 
@@ -101,10 +102,9 @@ public class ResourceAgent extends Agent {
 			System.out.println("Please add IP Address and PLC port to agent: " + this);
 			this.doDelete();
 		}
-		
-		String IPaddress = (String) args[0];
-		int PLCport = Integer.parseInt((String) args[1]);
-			/* OLD PLC
+	
+			String IPaddress = (String) args[0];
+			int PLCport = Integer.parseInt((String) args[1]);
 			this.addr= new AmsAddr();
 			addr.setNetIdStringEx(IPaddress);
 			addr.setPort(PLCport);
@@ -160,7 +160,7 @@ public class ResourceAgent extends Agent {
 							public Integer apply(ResourceEvent event){return event.getEventTime();}};  
 						capabilitiesSet = true;
 						
-						System.out.println("Capabilities set for: " + myAgent.getName());
+						System.out.println("Capabilities set for: " + myAgent.getAID().getLocalName());
 					}
 					else {
 						putBack(msg);
@@ -236,7 +236,7 @@ public class ResourceAgent extends Agent {
 						}
 
 						if (newneighborsAdded) {
-							System.out.println("Neighbors for: " + myAgent.getName() + " are " + outputNeighbor);
+							System.out.println("Neighbors for " + myAgent.getAID().getLocalName() + ": " + outputNeighbor.substring(0, outputNeighbor.length()-2));
 						}
 						neighborsSet = true;	
 
@@ -289,7 +289,7 @@ public class ResourceAgent extends Agent {
 						}						
 						
 						watchVariablesSet = true;
-						System.out.println("Watch variables set for: " + myAgent.getName());
+						System.out.println("Watch variables set for: " + myAgent.getAID().getLocalName());
 					}
 
 					else {
@@ -414,7 +414,16 @@ public class ResourceAgent extends Agent {
 			CallAdsFuncs caf = new CallAdsFuncs();
 			caf.openPort(addr);
 			*/
-			boolean varValue = true;// OLD PLC caf.readBoolValue(variable);
+			Random rand = new Random();
+			boolean varValue;
+			if (rand.nextInt(10) == 0) {
+				varValue = true;
+			}
+			else {
+				varValue = false;
+				lastCreated = 0;
+			}
+			//boolean varValue = true;// OLD PLC caf.readBoolValue(variable);
 			//System.out.println("lastCreated: " + lastCreated + "createperiod: " +createPeriod);
 			if(varValue && notifyAgentWhenState.containsKey(productState)) {
 				//Message to inform the PA about the product state
@@ -429,9 +438,9 @@ public class ResourceAgent extends Agent {
 			}
 			
 			else if (lastCreated > createPeriod && varValue && createNew) {
-				//System.out.println(""+myAgent.getLocalName()+ "["+variable+"=" +varValue+"]");
-				String ipaName = "initializePA" + myAgent.getAID();
-				System.out.println(ipaName);
+				//System.out.println(""+myAgent.getLocalName()+ "["+variable+"=" +varValue+" createperiod: "+ createPeriod +"]");
+				String ipaName = "(initPA)" + myAgent.getAID().getLocalName().substring(4) + "_" + variable;
+				//System.out.println(ipaName);
 				//Get the Agent controller
 				AgentController ac;
 				try {
@@ -441,10 +450,13 @@ public class ResourceAgent extends Agent {
 				} catch (StaleProxyException e) { e.printStackTrace();}
 				
 				//Creating a new PA starter
-				String uniqueRAIdentifier = myAgent.getLocalName().replaceAll("resourceAgent", "");
+				//System.out.println(myAgent.getLocalName());
+				String uniqueRAIdentifier = myAgent.getLocalName().replaceAll("resourceAgent", "");// TODO: maybe can remove replaceALL
+				
 				StartingPAParams spa = new StartingPAParams(myAgent.getAID(), productState,
-						uniqueRAIdentifier+PAincrement);
+						uniqueRAIdentifier+"-"+PAincrement);
 				PAincrement++;
+				//System.out.println(PAincrement);
 				
 				//Message to initialize the PA
 				ACLMessage startMsg = new ACLMessage(ACLMessage.INFORM);
@@ -455,11 +467,12 @@ public class ResourceAgent extends Agent {
 				
 				lastCreated = 0;
 			}
-			lastCreated= lastCreated+this.monitorPeriod;
+			//lastCreated= lastCreated+this.monitorPeriod;
 			/* OLD PLC
 			caf.setBoolValue(variable,Boolean.FALSE);
 			caf.closePort();
 			*/
+			//varValue = false;
 		}
 		
 	}
@@ -638,7 +651,7 @@ public class ResourceAgent extends Agent {
 		
 		boolean planned = this.RAschedule.addPA(productAgent, startTime+edgeOffset, endTime, false);
 		
-		System.out.println(productAgent.getLocalName().substring(productAgent.getLocalName().length()-3, productAgent.getLocalName().length()) + ",Scheduled," + getCurrentTime());
+		System.out.println(productAgent.getLocalName() + ",Scheduled," + getCurrentTime());
 		return planned;
 	}
 
@@ -716,7 +729,7 @@ public class ResourceAgent extends Agent {
 		caf.setIntValue(variableName, Integer.parseInt(variableSet));
 		caf.closePort();
 		*/
-		System.out.println(productAgent.getLocalName().substring(productAgent.getLocalName().length()-3, productAgent.getLocalName().length())+",Execution," + variableName + ",time," + getCurrentTime());
+		System.out.println(productAgent.getLocalName()+",Execution," + variableName + ",time," + getCurrentTime());
 	}
 	
 	/** Check when the edge is done and inform the product agent
