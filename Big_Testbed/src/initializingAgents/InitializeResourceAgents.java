@@ -91,18 +91,19 @@ public class InitializeResourceAgents extends Agent {
 				{"conv2_cnc3","cnc3_conv2","cnc4_conv2","conv2_cnc4"},
 				{"cnc3_p2_cnc3","cnc3_p3_cnc3","cnc3_p4_cnc3","cnc3_cnc3_p2","cnc3_cnc3_p3","cnc3_cnc3_p4"},
 				{"cnc4_p3_cnc4","cnc4_p4_cnc4","cnc4_p5_cnc4","cnc4_cnc4_p3","cnc4_cnc4_p4","cnc4_cnc4_p5"},
-				{"conv1_conv2","conv2_end","end_conv1"}};
+				{"conv1_conv2","conv2_conv3","conv3_conv1", "conv3_end"}};
 				
 			int[][] edgeTime = new int[][] {
-				{300,18000,9000,6000},
+				{3000,18000,18000,6000},
 				{5000,13000,12000,1000,1000,5000},
 				{1500,1500,6000,6000,3500,13000},
 				{7000,2500,2500,2500},
 				{6000,7000,19000,1000,1500,1000},
 				{1500,13000,1500,13000,6000,7000},
-				{300,300,300}};
+				{3000,3000,3000, 3000}};
 			
 			String[] RA_names = {"(RA)Robot1","(RA)CNC1","(RA)CNC2","(RA)Robot2","(RA)CNC3","(RA)CNC4","(RA)Conveyor"};
+			String[] RA_class = {"resourceAgent.Robot1Agent", "resourceAgent.CNC1Agent", "resourceAgent.CNC2Agent", "resourceAgent.Robot2Agent", "resourceAgent.CNC3Agent", "resourceAgent.CNC4Agent", "resourceAgent.ConveyorAgent"}; 
 
 			AID[] resourceAgents = new AID[RA_names.length];
 			Capabilities[] raCapabilities = new Capabilities[RA_names.length];
@@ -114,10 +115,10 @@ public class InitializeResourceAgents extends Agent {
 				
 				//Name for each resource agent
 				String raName = RA_names[i];
-				
+				String raClass = RA_class[i];
 				//Create the agent
 				try {
-					AgentController ac = getContainerController().createNewAgent(raName, "resourceAgent.ResourceAgent", new Object[] {});
+					AgentController ac = getContainerController().createNewAgent(raName, raClass, new Object[] {});
 					ac.start();
 				} 
 				catch (StaleProxyException e) {
@@ -159,8 +160,8 @@ public class InitializeResourceAgents extends Agent {
 			ProductState cnc4_p3 = new ProductState("CNC4-Machined3", new PhysicalProperty("p3"), new PhysicalProperty(new Point(0,1)));
 			ProductState cnc4_p4 = new ProductState("CNC4-Machined4", new PhysicalProperty("p4"), new PhysicalProperty(new Point(0,1)));
 			ProductState cnc4_p5 = new ProductState("CNC4-Machined5", new PhysicalProperty("p5"), new PhysicalProperty(new Point(0,1)));
+			ProductState conv3 = new ProductState("Conveyor3", null,new PhysicalProperty(new Point(0,0)));
 			ProductState end = new ProductState("ConveyorEnd", new PhysicalProperty("end"),new PhysicalProperty(new Point(0,0)));
-			
 		
 			// Populate all of the edges
 					
@@ -212,8 +213,9 @@ public class InitializeResourceAgents extends Agent {
 			
 			//Conveyor
 			stateEndpoints.put(edgeName[6][0], new ProductState[] {conv1, conv2}); // Conveyor 1 to Conveyor 2
-			stateEndpoints.put(edgeName[6][1], new ProductState[] {conv2, end}); // Conveyor 2 to end
-			stateEndpoints.put(edgeName[6][2], new ProductState[] {end, conv1}); // end to Conveyor 1
+			stateEndpoints.put(edgeName[6][1], new ProductState[] {conv2, conv3}); // Conveyor 2 to end
+			stateEndpoints.put(edgeName[6][2], new ProductState[] {conv3, conv1}); // end to Conveyor 1
+			stateEndpoints.put(edgeName[6][3], new ProductState[] {conv3, end}); // end to Conveyor 1 
 			
 			// Send out capabilities to RAs
 			for (int i : RAs_Used) {
@@ -271,7 +273,7 @@ public class InitializeResourceAgents extends Agent {
 				{"Conveyor2","CNC3","CNC4"},
 				{"CNC3","CNC3-Machined2","CNC3-Machined3","CNC 3-Machined4"},
 				{"CNC4","CNC4-Machined3","CNC4-Machined4","CNC 4-Machined5"},
-				{"Conveyor1","Conveyor2","ConveyorEnd"}
+				{"Conveyor1","Conveyor2","Conveyor3", "ConveyorEnd"}
 				};
 				
 			ProductState[][] statesForRAs= new ProductState[][] {
@@ -280,8 +282,8 @@ public class InitializeResourceAgents extends Agent {
 				{cnc2, cnc2_p1, cnc2_p2, cnc2_p3},
 				{conv2, cnc3, cnc4},
 				{cnc3, cnc3_p2, cnc3_p3, cnc3_p4},
-				{cnc4_p3, cnc4_p4, cnc4_p5},
-				{conv1, conv2, end}
+				{cnc4, cnc4_p3, cnc4_p4, cnc4_p5},
+				{conv1, conv2, conv3, end}
 				};
 				
 							

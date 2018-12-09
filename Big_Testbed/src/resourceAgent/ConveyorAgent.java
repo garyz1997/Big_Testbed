@@ -1,37 +1,46 @@
 package resourceAgent;
 
-import connectionPLC.CallAdsFuncs;
+import java.util.HashMap;
+
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.WakerBehaviour;
+import javafish.clients.opc.ReadWriteJADE;
+import resourceAgent.Robot1Agent.resetSignal;
 import sharedInformation.RequestSchedule;
 import sharedInformation.ResourceEvent;
 
 public class ConveyorAgent extends ResourceAgent{
 
 	private static final long serialVersionUID = 7080006178159083214L;
+	private HashMap<String, String> varToPLC = new HashMap<>();
+	ReadWriteJADE plcConnection;
+	
+	public ConveyorAgent() {
+		varToPLC.put("PerformEvent_conv1_conv2", "C1HoldBack.Ret");
+		varToPLC.put("PerformEvent_conv2_conv3", "C2HoldBack.Ret");
+		varToPLC.put("PerformEvent_conv3_conv1", "C3HoldBack.Ret");
+		varToPLC.put("PerformEvent_conv3_end", "t1.DN");
+		
+	}
 	
 	@Override
 	public void runEdge(ResourceEvent edge, AID productAgent) {
-		String variableName = edge.getActiveMethod().split(",")[0];
+		plcConnection = new ReadWriteJADE();
+		String variableName = varToPLC.get(edge.getActiveMethod().split(",")[0]);
 		String variableSet = edge.getActiveMethod().split(",")[1];
 		
-		// TODO: set PLC tag value {variablename, variableSet}
-		CallAdsFuncs caf = new CallAdsFuncs();
-		caf.openPort(getAddr());
-		caf.setIntValue(variableName, Integer.parseInt(variableSet));
-		System.out.println(productAgent.getLocalName().substring(productAgent.getLocalName().length()-3, 
-				productAgent.getLocalName().length())+",plc," + getCurrentTime());
-		caf.closePort();
-		
+		//System.out.println(plcConnection.readTag(variableName));
+		System.out.println(plcConnection.writeTag(variableName,Integer.parseInt(variableSet)));
 
 		System.out.println(variableName+variableSet);
 		
+		plcConnection.uninit();
 		addBehaviour(new resetSignal(this, edge.getEventTime()+1500, edge));
+
 	}
 	
 	public class resetSignal extends WakerBehaviour {
-		private static final long serialVersionUID = 6800760293776896340L;
 		private final ResourceEvent desiredEdge;
 
 		public resetSignal(Agent a, long timeout, ResourceEvent desiredEdge) {
@@ -40,13 +49,16 @@ public class ConveyorAgent extends ResourceAgent{
 		}
 		
 		protected void onWake() {		
-			String variableName = desiredEdge.getActiveMethod().split(",")[0];
+			plcConnection = new ReadWriteJADE();
+			String variableName = varToPLC.get(desiredEdge.getActiveMethod().split(",")[0]);
 			Integer variableSet = 0;
-			
-			CallAdsFuncs caf = new CallAdsFuncs();
-			caf.openPort(getAddr());
-			caf.setIntValue(variableName, variableSet);
-			caf.closePort();
+			System.out.println(plcConnection.writeTag(variableName,variableSet));
+			plcConnection.uninit();
 		}
+	}
+
+	protected void takeDown() {
+		// Printout a dismissal message
+		System.out.println("DELETED: "+getAID().getLocalName());
 	}
 }

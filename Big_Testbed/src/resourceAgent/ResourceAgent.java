@@ -64,6 +64,7 @@ public class ResourceAgent extends Agent {
 
 	//PLC Communication
 		//private AmsAddr addr;
+	//private ReadWriteJADE PLCconnection;
 
 	//For initialization
 	private boolean capabilitiesSet;
@@ -416,7 +417,9 @@ public class ResourceAgent extends Agent {
 			*/
 			Random rand = new Random();
 			boolean varValue;
-			if (rand.nextInt(10) == 0) {
+			//System.out.println(myAgent.getAID().getLocalName().substring(4));
+			if (variable.equals("PartAt_Conveyor1") && myAgent.getAID().getLocalName().substring(4).equals("Conveyor"))
+			{
 				varValue = true;
 			}
 			else {

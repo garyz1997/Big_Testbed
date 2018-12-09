@@ -61,7 +61,7 @@ public class ProductAgent extends Agent {
 	
 	private final int explorationWaitTime = 150;
 	private final int planningWaitTime = 50;
-	private final int nextExecutionStartTime = 500;
+	private final int nextExecutionStartTime = 1000;
 	
 	private int bidTime = getStartBidTime();
 	
@@ -670,7 +670,7 @@ public class ProductAgent extends Agent {
 			System.out.println(getLocalName() + ",Execution," + getCurrentTime());
 			
 			myAgent.addBehaviour(new checkForNoRaResponse(myAgent,
-					requestAction.getQueriedEdge().getEventTime()+actionTimeout, lastActionQueriedTime));
+					requestAction.getQueriedEdge().getEventTime()+actionTimeout, lastActionQueriedTime, requestAction));
 			
 //			if (!queried){
 //				exit();
@@ -683,15 +683,18 @@ public class ProductAgent extends Agent {
 
 		private static final long serialVersionUID = -3683057277678149213L;
 		final int checkActionQueriedTime;
+		private RequestAction requestAction;
 		
-		public checkForNoRaResponse(Agent a, long timeout, int checkActionQueriedTime) {
+		public checkForNoRaResponse(Agent a, long timeout, int checkActionQueriedTime, RequestAction requestAction) {
 			super(a, timeout);
 			this.checkActionQueriedTime = checkActionQueriedTime;
+			this.requestAction = requestAction;
 		}
 		
 		protected void onWake (){
 			if (checkActionQueriedTime==lastActionQueriedTime) {
-				System.out.println("No response from RAs for" + myAgent.getLocalName());
+				System.out.println("No response from " + requestAction.getQueriedEdge().getEventAgent().getLocalName() + 
+						" for" + myAgent.getLocalName() + requestAction.getQueriedEdge().getActiveMethod());
 				exit("No response from RAs");
 			}
 		}

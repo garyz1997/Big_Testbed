@@ -93,7 +93,8 @@ public class InitializeProductAgent extends Agent {
 			Random rand = new Random();
 			//String paramID = startingPAParams.getID();
 			//Boolean randomSet = paramID[paramID.length()-1].equals("3");
-			if (startingPAParams.getID().charAt(startingPAParams.getID().length()-1)=='3') {//randomize part production plans TODO: remove
+			System.out.println(startingPAParams.getID().length());
+			if (startingPAParams.getID().length() == 14 && startingPAParams.getID().charAt(startingPAParams.getID().length()-1)=='0') {//randomize part production plans TODO: remove
 				pp.addNewSet(new PhysicalProperty("p3"));
 			}
 
