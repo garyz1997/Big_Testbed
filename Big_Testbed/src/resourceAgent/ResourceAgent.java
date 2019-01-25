@@ -28,6 +28,7 @@ import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
+import javafish.clients.opc.ReadWriteJADE;
 import sharedInformation.Bid;
 import sharedInformation.Capabilities;
 import sharedInformation.CapabilitiesTable;
@@ -282,6 +283,13 @@ public class ResourceAgent extends Agent {
 							caf.setBoolValue(key,Boolean.FALSE);
 							caf.closePort();
 							*/
+							/*
+							//new PLC
+							ReadWriteJADE plcConnection = new ReadWriteJADE();
+							System.out.println(plcConnection.writeTag(key,0));
+							plcConnection.uninit();
+							//end new PLC
+							 */
 							addBehaviour(new PhysicalSystemMonitoring(myAgent, key,
 									watchVariableTable.getStateMapping().get(key),
 										watchVariableTable.getMonitorPeriodMapping().get(key),
@@ -396,7 +404,9 @@ public class ResourceAgent extends Agent {
 		private final Boolean createNew;
 		private final Integer createPeriod;
 		private Integer lastCreated = 0;
+		private Integer readTimer = 10000000;
 		private Integer monitorPeriod;
+		ReadWriteJADE plcConnection;
 
 		public PhysicalSystemMonitoring(Agent a, String variable, ProductState productState, Integer monitorPeriod, Boolean createNew, Integer createPeriod) {
 			super(a, monitorPeriod);
@@ -411,6 +421,7 @@ public class ResourceAgent extends Agent {
 
 		@Override
 		protected void onTick() {
+			readTimer = readTimer + 1;
 			/* OLD PLC
 			CallAdsFuncs caf = new CallAdsFuncs();
 			caf.openPort(addr);
@@ -418,6 +429,7 @@ public class ResourceAgent extends Agent {
 			Random rand = new Random();
 			boolean varValue;
 			//System.out.println(myAgent.getAID().getLocalName().substring(4));
+			/* Test 1 part agent
 			if (variable.equals("PartAt_Conveyor1") && myAgent.getAID().getLocalName().substring(4).equals("Conveyor"))
 			{
 				varValue = true;
@@ -426,15 +438,25 @@ public class ResourceAgent extends Agent {
 				varValue = false;
 				lastCreated = 0;
 			}
+			*/
 			//boolean varValue = true;// OLD PLC caf.readBoolValue(variable);
+			//new PLC
+			plcConnection = new ReadWriteJADE();
+			String varValueStr = plcConnection.readTag(variable);
+			plcConnection.uninit();
+			varValue = Boolean.parseBoolean(varValueStr.substring(varValueStr.length()-1));
+			//end new PLC
 			//System.out.println("lastCreated: " + lastCreated + "createperiod: " +createPeriod);
-			if(varValue && notifyAgentWhenState.containsKey(productState)) {
+			//only read after 10 * monitorPeriod time after last read
+			if(readTimer > (10 * monitorPeriod) && varValue && notifyAgentWhenState.containsKey(productState)) {
 				//Message to inform the PA about the product state
 				
 				for(AID productAgent:notifyAgentWhenState.get(productState).keySet()) {
 					informPA(productAgent, notifyAgentWhenState.get(productState).get(productAgent));
 					notifyAgentWhenState.remove(productState);
 				}
+				//Reset read timer
+				readTimer = 0;
 				
 				//Reset the counter
 				lastCreated = 0;
@@ -475,7 +497,15 @@ public class ResourceAgent extends Agent {
 			caf.setBoolValue(variable,Boolean.FALSE);
 			caf.closePort();
 			*/
-			//varValue = false;
+			/*
+			//new PLC
+			plcConnection = new ReadWriteJADE();
+			System.out.println(plcConnection.writeTag(variable,0));
+			plcConnection.uninit();
+			//end new PLC
+			 *
+			 */
+			varValue = false;
 		}
 		
 	}

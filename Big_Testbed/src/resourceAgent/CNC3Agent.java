@@ -13,7 +13,7 @@ public class CNC3Agent extends ResourceAgent{
 	public void runEdge(ResourceEvent edge, AID productAgent) {
 		String variableName = edge.getActiveMethod().split(",")[0];
 		String variableSet = edge.getActiveMethod().split(",")[1];
-		
+		//TODO: Map PLC Tags to CNC 3 events
 		// TODO: set PLC tag value {variablename, variableSet}
 		
 

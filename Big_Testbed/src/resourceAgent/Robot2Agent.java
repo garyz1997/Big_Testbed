@@ -12,7 +12,7 @@ import sharedInformation.ResourceEvent;
 public class Robot2Agent extends ResourceAgent{
 	private HashMap<String, String> varToPLC = new HashMap<>();
 	ReadWriteJADE plcConnection;
-	public Robot2Agent() {
+	public Robot2Agent() { //Mapping PLC tags to Robot 2 events
 		varToPLC.put("PerformEvent_conv2_cnc3", "Fanuc_Rbt_C2:O.Data[0].0");
 		varToPLC.put("PerformEvent_cnc3_conv2", "Fanuc_Rbt_C2:O.Data[0].2");
 		varToPLC.put("PerformEvent_cnc4_conv2", "Fanuc_Rbt_C2:O.Data[0].3");
@@ -24,17 +24,6 @@ public class Robot2Agent extends ResourceAgent{
 		plcConnection = new ReadWriteJADE();
 		String variableName = varToPLC.get(edge.getActiveMethod().split(",")[0]);
 		String variableSet = edge.getActiveMethod().split(",")[1];
-		// TODO: set PLC tag value {variablename, variableSet}
-		/*
-		CallAdsFuncs caf = new CallAdsFuncs();
-		caf.openPort(getAddr());
-		caf.setIntValue(variableName, Integer.parseInt(variableSet));
-		System.out.println(productAgent.getLocalName().substring(productAgent.getLocalName().length()-3, 
-				productAgent.getLocalName().length())+",plc," + getCurrentTime());
-		caf.closePort();
-		*/
-		
-		//System.out.println(plcConnection.readTag(variableName));
 		System.out.println(plcConnection.writeTag(variableName,Integer.parseInt(variableSet)));
 
 		System.out.println(variableName+variableSet);
@@ -55,13 +44,6 @@ public class Robot2Agent extends ResourceAgent{
 			plcConnection = new ReadWriteJADE();
 			String variableName = varToPLC.get(desiredEdge.getActiveMethod().split(",")[0]);
 			Integer variableSet = 0;
-			/*
-			CallAdsFuncs caf = new CallAdsFuncs();
-			caf.openPort(getAddr());
-			caf.setIntValue(variableName, variableSet);
-			caf.closePort();
-			*/
-			//System.out.println(plcConnection.readTag(variableName));
 			System.out.println(plcConnection.writeTag(variableName,variableSet));
 			plcConnection.uninit();
 		}

@@ -16,7 +16,7 @@ public class ConveyorAgent extends ResourceAgent{
 	private HashMap<String, String> varToPLC = new HashMap<>();
 	ReadWriteJADE plcConnection;
 	
-	public ConveyorAgent() {
+	public ConveyorAgent() { //Mapping the PLC tags to the Conveyor events
 		varToPLC.put("PerformEvent_conv1_conv2", "C1HoldBack.Ret");
 		varToPLC.put("PerformEvent_conv2_conv3", "C2HoldBack.Ret");
 		varToPLC.put("PerformEvent_conv3_conv1", "C3HoldBack.Ret");
@@ -29,8 +29,6 @@ public class ConveyorAgent extends ResourceAgent{
 		plcConnection = new ReadWriteJADE();
 		String variableName = varToPLC.get(edge.getActiveMethod().split(",")[0]);
 		String variableSet = edge.getActiveMethod().split(",")[1];
-		
-		//System.out.println(plcConnection.readTag(variableName));
 		System.out.println(plcConnection.writeTag(variableName,Integer.parseInt(variableSet)));
 
 		System.out.println(variableName+variableSet);

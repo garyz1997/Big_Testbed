@@ -15,6 +15,7 @@ public class CNC1Agent extends ResourceAgent{
 		String variableName = edge.getActiveMethod().split(",")[0];
 		String variableSet = edge.getActiveMethod().split(",")[1];
 		
+		//TODO: Map PLC Tags to CNC 1 events
 		// TODO: set PLC tag value {variablename, variableSet}
 		
 
