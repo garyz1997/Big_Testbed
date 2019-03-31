@@ -115,6 +115,7 @@ public class ProductAgent extends Agent {
 						
 						//Initialize the Knowledge Base
 						productionPlan = setupParams.getProductionPlan(); // Production Plan
+						System.out.println("Production plan: " + productionPlan.toString());
 						exitPlan = setupParams.getExitPlan(); 
 						productHistory = new ProductHistory(myAgent.getAID(),setupParams.getStartingNode(),setupParams.getStartingResource()); //Product History
 						environmentModel = new EnvironmentModel(myAgent.getAID(),setupParams.getStartingNode(),setupParams.getStartingResource()); // Environment Model
@@ -662,7 +663,8 @@ public class ProductAgent extends Agent {
 			
 			//Query for start of execution (request for bids)
 			ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-			msg.addReceiver(nextAction.getEventAgent());		
+			msg.addReceiver(nextAction.getEventAgent());	
+			System.out.println("Requesting action: " + nextAction.getActiveMethod());
 			try { msg.setContentObject(requestAction);}
 			catch (IOException e) {e.printStackTrace();}
 			send(msg);

@@ -21,19 +21,19 @@ public class ConveyorAgent extends ResourceAgent{
 		varToPLC.put("PerformEvent_conv2_conv3", "C2HoldBack.Ret");
 		varToPLC.put("PerformEvent_conv3_conv1", "C3HoldBack.Ret");
 		varToPLC.put("PerformEvent_conv3_end", "t1.DN");
-		
+		String[] tags = {"C1HoldBack.Ret","C2HoldBack.Ret","C3HoldBack.Ret","t1.DN"};
+		//edit::: plcConnection = new ReadWriteJADE(tags);
 	}
 	
 	@Override
 	public void runEdge(ResourceEvent edge, AID productAgent) {
-		plcConnection = new ReadWriteJADE();
 		String variableName = varToPLC.get(edge.getActiveMethod().split(",")[0]);
 		String variableSet = edge.getActiveMethod().split(",")[1];
-		System.out.println(plcConnection.writeTag(variableName,Integer.parseInt(variableSet)));
+		//edit::: System.out.println(plcConnection.writeTag(variableName,Integer.parseInt(variableSet)));
 
 		System.out.println(variableName+variableSet);
 		
-		plcConnection.uninit();
+		//edit::: plcConnection.uninit();
 		addBehaviour(new resetSignal(this, edge.getEventTime()+1500, edge));
 
 	}
@@ -47,11 +47,10 @@ public class ConveyorAgent extends ResourceAgent{
 		}
 		
 		protected void onWake() {		
-			plcConnection = new ReadWriteJADE();
 			String variableName = varToPLC.get(desiredEdge.getActiveMethod().split(",")[0]);
 			Integer variableSet = 0;
-			System.out.println(plcConnection.writeTag(variableName,variableSet));
-			plcConnection.uninit();
+			//edit::: System.out.println(plcConnection.writeTag(variableName,variableSet));
+			//edit::: plcConnection.uninit();
 		}
 	}
 

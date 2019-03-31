@@ -23,8 +23,10 @@ public class startJADE extends Agent {
      */
     public static void main(String[] args) {
     	String[][] agentList = {
-    			//{"helloAgent","agents.HelloWorldAgent"}
-    			{"InitializeResourceAgent","initializingAgents.InitializeResourceAgents"}
+    			//{"helloAgent","agents.HelloWorldAgent"},
+    			//{"helloAgent2","agents.HelloWorldAgent2"},
+    			{"InitializeResourceAgent","initializingAgents.InitializeResourceAgents"},
+    			{"OPCLayer","JEasyOPC.OPCLayer"}
     		};
     	//,
 		//{"InitializeResourceAgent","initializingAgents.InitializeResourceAgents"}
@@ -43,6 +45,27 @@ public class startJADE extends Agent {
 		Boot.main(parameters);    
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
 //States 
 ProductState conv1 = new ProductState("Conveyor 1", null, new PhysicalProperty(new Point(5,0)));

@@ -33,7 +33,7 @@ public class InitializeProductAgent extends Agent {
 	}
 
 	protected void setup() {
-		System.out.println("CREATED: InitializeProductAgent "+getAID().getLocalName());
+		System.out.println("[" + this.getLocalName()+"] CREATED: InitializeProductAgent "+getAID().getLocalName());
 		addBehaviour(new PASetup());
 	}
 	
@@ -94,7 +94,7 @@ public class InitializeProductAgent extends Agent {
 			//String paramID = startingPAParams.getID();
 			//Boolean randomSet = paramID[paramID.length()-1].equals("3");
 			System.out.println(startingPAParams.getID().length());
-			if (startingPAParams.getID().length() == 14 && startingPAParams.getID().charAt(startingPAParams.getID().length()-1)=='0') {//randomize part production plans TODO: remove
+			if (true) {//randomize part production plans TODO: remove
 				pp.addNewSet(new PhysicalProperty("p3"));
 			}
 

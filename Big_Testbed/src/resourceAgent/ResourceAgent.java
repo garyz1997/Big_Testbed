@@ -29,6 +29,7 @@ import jade.lang.acl.UnreadableException;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 import javafish.clients.opc.ReadWriteJADE;
+import javafish.clients.opc.ReadWriteJADE2;
 import sharedInformation.Bid;
 import sharedInformation.Capabilities;
 import sharedInformation.CapabilitiesTable;
@@ -75,6 +76,7 @@ public class ResourceAgent extends Agent {
 	private HashMap<ProductState,HashMap<AID,ResourceEvent>> notifyAgentWhenState 
 		= new HashMap<ProductState, HashMap<AID, ResourceEvent>>();
 	
+	//private ReadWriteJADE2 plcConnection;
 	
 
 	public ResourceAgent() {}
@@ -86,7 +88,8 @@ public class ResourceAgent extends Agent {
 	 * @param resourceCapabilities
 	 */
 	protected void setup(){
-		System.out.println("CREATED: ResourceAgent "+getAID().getLocalName());
+		System.out.println("[" + this.getLocalName()+"] CREATED: ResourceAgent "+getAID().getLocalName());
+		doSuspend();//Suspend Agent upon creation. Resume Agent via GUI to start it up.
 		//Initialize everything
 		this.working = false;
 		this.setResourceCapabilities(new Capabilities());
@@ -136,6 +139,7 @@ public class ResourceAgent extends Agent {
 	protected void takeDown() {
 		// Printout a dismissal message
 		System.out.println(getAID().getName()+" terminating.");
+		//plcConnection.uninit();
 	}
 	
 	//================================================================================
@@ -207,9 +211,10 @@ public class ResourceAgent extends Agent {
 
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
 			ACLMessage msg = myAgent.receive(mt);		
-			if(msg != null){
+			if(msg != null && !msg.getSender().getLocalName().equals("OPCLayer")){
 				try {
 					//If this is a capabilities table (RA and Capabilties pair)
+					//System.out.println(msg.getSender().getLocalName());
 					if (msg.getContentObject().getClass().getName().contains("CapabilitiesTable")) {
 						CapabilitiesTable capTable = (CapabilitiesTable) msg.getContentObject();
 						
@@ -269,13 +274,14 @@ public class ResourceAgent extends Agent {
 		public void onTick() {
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
 			ACLMessage msg = myAgent.receive(mt);		
-			if(msg != null){
+			if(msg != null && !msg.getSender().getLocalName().equals("OPCLayer")){
 				try {
 					if (msg.getContentObject().getClass().getName().contains("WatchRAVariableTable")) {
 						
 						// Set up the mapping from a variable to a product state
 						WatchRAVariableTable watchVariableTable = (WatchRAVariableTable) msg.getContentObject();				
-						
+						String[] tags = new String[watchVariableTable.getStateMapping().keySet().size()];
+						int count = 0;
 						for (String key:watchVariableTable.getStateMapping().keySet()) {
 							/* OLD PLC
 							CallAdsFuncs caf = new CallAdsFuncs();
@@ -290,13 +296,19 @@ public class ResourceAgent extends Agent {
 							plcConnection.uninit();
 							//end new PLC
 							 */
+							tags[count] = key;
+							count++;
 							addBehaviour(new PhysicalSystemMonitoring(myAgent, key,
 									watchVariableTable.getStateMapping().get(key),
 										watchVariableTable.getMonitorPeriodMapping().get(key),
 											watchVariableTable.getInitializeMapping().get(key),
 												watchVariableTable.getCreatePeriod().get(key)));
 						}						
-						
+						System.out.println(this.getAgent().getLocalName() + " created new PLC connection");
+						for (String tag : tags) {
+							System.out.println(myAgent.getAID().getLocalName()+ " " + tag);
+						}
+						//plcConnection = new ReadWriteJADE2(tags);
 						watchVariablesSet = true;
 						System.out.println("Watch variables set for: " + myAgent.getAID().getLocalName());
 					}
@@ -403,10 +415,9 @@ public class ResourceAgent extends Agent {
 		private final ProductState productState;
 		private final Boolean createNew;
 		private final Integer createPeriod;
-		private Integer lastCreated = 0;
+		private Integer lastCreated = 19001;
 		private Integer readTimer = 10000000;
 		private Integer monitorPeriod;
-		ReadWriteJADE plcConnection;
 
 		public PhysicalSystemMonitoring(Agent a, String variable, ProductState productState, Integer monitorPeriod, Boolean createNew, Integer createPeriod) {
 			super(a, monitorPeriod);
@@ -415,83 +426,100 @@ public class ResourceAgent extends Agent {
 			this.productState = productState;
 			this.createNew = createNew;		
 			this.createPeriod = createPeriod;
-			
-			lastCreated = createPeriod+1;
 		}
 
 		@Override
 		protected void onTick() {
+			lastCreated = lastCreated+1;
 			readTimer = readTimer + 1;
 			/* OLD PLC
 			CallAdsFuncs caf = new CallAdsFuncs();
 			caf.openPort(addr);
 			*/
-			Random rand = new Random();
-			boolean varValue;
-			//System.out.println(myAgent.getAID().getLocalName().substring(4));
-			/* Test 1 part agent
-			if (variable.equals("PartAt_Conveyor1") && myAgent.getAID().getLocalName().substring(4).equals("Conveyor"))
-			{
-				varValue = true;
-			}
-			else {
-				varValue = false;
-				lastCreated = 0;
-			}
-			*/
-			//boolean varValue = true;// OLD PLC caf.readBoolValue(variable);
 			//new PLC
-			plcConnection = new ReadWriteJADE();
-			String varValueStr = plcConnection.readTag(variable);
-			plcConnection.uninit();
-			varValue = Boolean.parseBoolean(varValueStr.substring(varValueStr.length()-1));
+			//System.out.println("Variable: " + variable);
+			
+			//request info from OPC agent
+			ACLMessage reqReadTag = new ACLMessage(ACLMessage.REQUEST);
+			reqReadTag.setSender(myAgent.getAID());
+			reqReadTag.addReceiver(new AID("OPCLayer", AID.ISLOCALNAME));
+			reqReadTag.setContent(variable);
+			reqReadTag.setOntology("Read"); // so that OPC Agent knows that the request is a read tag request
+			reqReadTag.setConversationId("agent1-read");
+			//reqReadTag.setReplyWith("read" + System.currentTimeMillis()); //to make the request unique
+			//System.out.println("Sending read request for the tag: " + variable + ".....");
+			myAgent.send(reqReadTag);
+			//System.out.println("Sent read request for the tag: " + variable);
+			
+			//receive info from OPC agent
+			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+			//System.out.println("lastCreated for agent " + myAgent.getLocalName() + "is " + lastCreated + " createperiod " + (createPeriod)); //check create delay
+			ACLMessage response = receive(mt);
+			if (response!=null) {
+				if ( response.getSender().getLocalName().equals("OPCLayer") && response.getOntology().equals(variable)) {
+					Boolean varValue = Boolean.valueOf(response.getContent());
+					//System.out.println("Tag value received for tag " + response.getOntology() + ": " + varValue + " Content: " + response.getContent());
+					//operate on the response
+					if(readTimer > (10 * monitorPeriod) && varValue && notifyAgentWhenState.containsKey(productState)) {
+						//Reset read timer
+						readTimer = 0;
+						
+						//Reset the counter
+						lastCreated = 0;
+						//Message to inform the PA about the product state
+						
+						for(AID productAgent:notifyAgentWhenState.get(productState).keySet()) {
+							informPA(productAgent, notifyAgentWhenState.get(productState).get(productAgent));
+							notifyAgentWhenState.remove(productState);
+						}
+					}
+					
+					else if (lastCreated > createPeriod && varValue && createNew) {
+						
+						System.out.println(""+myAgent.getLocalName()+ " is creating when lastCreated is " + lastCreated + "["+variable+"=" +varValue+" createperiod: "+ createPeriod +"]");
+						lastCreated = 0;
+						String ipaName = "(initPA)" + myAgent.getAID().getLocalName().substring(4) + "_" + variable;
+						//System.out.println(ipaName);
+						//Get the Agent controller
+						AgentController ac;
+						try {
+							ac = getContainerController().createNewAgent(ipaName, "initializingAgents.InitializeProductAgent",
+									new Object[] {});
+							ac.start();
+						} catch (StaleProxyException e) { e.printStackTrace();}
+						
+						//Creating a new PA starter
+						//System.out.println(myAgent.getLocalName());
+						String uniqueRAIdentifier = myAgent.getLocalName().replaceAll("resourceAgent", "");// TODO: maybe can remove replaceALL
+						
+						StartingPAParams spa = new StartingPAParams(myAgent.getAID(), productState,
+								uniqueRAIdentifier+"-"+PAincrement);
+						PAincrement++;
+						//System.out.println(PAincrement);
+						
+						//Message to initialize the PA
+						ACLMessage startMsg = new ACLMessage(ACLMessage.INFORM);
+						startMsg.addReceiver(new AID(ipaName,AID.ISLOCALNAME));
+						try { startMsg.setContentObject(spa);}
+						catch (IOException e) {e.printStackTrace();}
+						send(startMsg);
+						
+					}
+				}
+				else {
+					putBack(response);
+				}				
+			}
+			
+		
+			
+			
+			//String varValueStr = plcConnection.readTag(variable);
+			//String varValueStr = "random string";
 			//end new PLC
 			//System.out.println("lastCreated: " + lastCreated + "createperiod: " +createPeriod);
 			//only read after 10 * monitorPeriod time after last read
-			if(readTimer > (10 * monitorPeriod) && varValue && notifyAgentWhenState.containsKey(productState)) {
-				//Message to inform the PA about the product state
-				
-				for(AID productAgent:notifyAgentWhenState.get(productState).keySet()) {
-					informPA(productAgent, notifyAgentWhenState.get(productState).get(productAgent));
-					notifyAgentWhenState.remove(productState);
-				}
-				//Reset read timer
-				readTimer = 0;
-				
-				//Reset the counter
-				lastCreated = 0;
-			}
 			
-			else if (lastCreated > createPeriod && varValue && createNew) {
-				//System.out.println(""+myAgent.getLocalName()+ "["+variable+"=" +varValue+" createperiod: "+ createPeriod +"]");
-				String ipaName = "(initPA)" + myAgent.getAID().getLocalName().substring(4) + "_" + variable;
-				//System.out.println(ipaName);
-				//Get the Agent controller
-				AgentController ac;
-				try {
-					ac = getContainerController().createNewAgent(ipaName, "initializingAgents.InitializeProductAgent",
-							new Object[] {});
-					ac.start();
-				} catch (StaleProxyException e) { e.printStackTrace();}
-				
-				//Creating a new PA starter
-				//System.out.println(myAgent.getLocalName());
-				String uniqueRAIdentifier = myAgent.getLocalName().replaceAll("resourceAgent", "");// TODO: maybe can remove replaceALL
-				
-				StartingPAParams spa = new StartingPAParams(myAgent.getAID(), productState,
-						uniqueRAIdentifier+"-"+PAincrement);
-				PAincrement++;
-				//System.out.println(PAincrement);
-				
-				//Message to initialize the PA
-				ACLMessage startMsg = new ACLMessage(ACLMessage.INFORM);
-				startMsg.addReceiver(new AID(ipaName,AID.ISLOCALNAME));
-				try { startMsg.setContentObject(spa);}
-				catch (IOException e) {e.printStackTrace();}
-				send(startMsg);
-				
-				lastCreated = 0;
-			}
 			//lastCreated= lastCreated+this.monitorPeriod;
 			/* OLD PLC
 			caf.setBoolValue(variable,Boolean.FALSE);
@@ -505,8 +533,8 @@ public class ResourceAgent extends Agent {
 			//end new PLC
 			 *
 			 */
-			varValue = false;
 		}
+		
 		
 	}
 	

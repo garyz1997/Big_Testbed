@@ -18,17 +18,27 @@ public class Robot2Agent extends ResourceAgent{
 		varToPLC.put("PerformEvent_cnc4_conv2", "Fanuc_Rbt_C2:O.Data[0].3");
 		varToPLC.put("PerformEvent_conv2_cnc4", "Fanuc_Rbt_C2:O.Data[0].1");
 	}
+	protected void setup() {
+		String[] tags = {"Fanuc_Rbt_C2:O.Data[0].0","Fanuc_Rbt_C2:O.Data[0].2","Fanuc_Rbt_C2:O.Data[0].3","Fanuc_Rbt_C2:O.Data[0].1"};
+		String registerMessage = "["+this.getLocalName()+"] Trying to register ";
+		for (String tag : tags)
+		{
+			registerMessage += tag + ", ";
+		}
+		System.out.println(registerMessage);
+		//plcConnection = new ReadWriteJADE(tags);
+	}
+
 
 	@Override
 	public void runEdge(ResourceEvent edge, AID productAgent) {
-		plcConnection = new ReadWriteJADE();
 		String variableName = varToPLC.get(edge.getActiveMethod().split(",")[0]);
 		String variableSet = edge.getActiveMethod().split(",")[1];
-		System.out.println(plcConnection.writeTag(variableName,Integer.parseInt(variableSet)));
+		//System.out.println(plcConnection.writeTag(variableName,Integer.parseInt(variableSet)));
 
 		System.out.println(variableName+variableSet);
 
-		plcConnection.uninit();
+		//plcConnection.uninit();
 		addBehaviour(new resetSignal(this, edge.getEventTime()+1500, edge));
 	}
 	
@@ -41,16 +51,15 @@ public class Robot2Agent extends ResourceAgent{
 		}
 		
 		protected void onWake() {		
-			plcConnection = new ReadWriteJADE();
 			String variableName = varToPLC.get(desiredEdge.getActiveMethod().split(",")[0]);
 			Integer variableSet = 0;
-			System.out.println(plcConnection.writeTag(variableName,variableSet));
-			plcConnection.uninit();
+			//System.out.println(plcConnection.writeTag(variableName,variableSet));
+			//plcConnection.uninit();
 		}
 	}
 	protected void takeDown() {
 		// Printout a dismissal message
-		plcConnection.uninit();
+		//plcConnection.uninit();
 		System.out.println("DELETED: "+getAID().getLocalName());
 	}
 }

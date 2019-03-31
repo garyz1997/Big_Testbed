@@ -33,7 +33,7 @@ public class InitializeResourceAgents extends Agent {
 	public InitializeResourceAgents() {}
 	
 	protected void setup() {
-		System.out.println("CREATED: InitializeResourceAgents "+getAID().getLocalName());
+		System.out.println("[" + this.getLocalName()+"] CREATED: InitializeResourceAgents "+getAID().getLocalName());
 		int[] RAs_Used = new int[] {0,1,2,3,4,5,6};
 		this.addBehaviour(new RASetup(RAs_Used));
 		
@@ -77,7 +77,7 @@ public class InitializeResourceAgents extends Agent {
 				{1500,13000,1500,13000,6000,7000}, //CNC 4
 				{3000,3000,3000, 3000}}; //Conveyor
 			
-			String[] RA_names = {"(RA)Robot1","(RA)CNC1","(RA)CNC2","(RA)Robot2","(RA)CNC3","(RA)CNC4","(RA)Conveyor"}; //Resource Agent names
+			String[] RA_names = {"Robot1Agent", "CNC1Agent", "CNC2Agent", "Robot2Agent", "CNC3Agent", "CNC4Agent", "ConveyorAgent"}; //Resource Agent names
 			String[] RA_class = {"resourceAgent.Robot1Agent", "resourceAgent.CNC1Agent", "resourceAgent.CNC2Agent", "resourceAgent.Robot2Agent", "resourceAgent.CNC3Agent", "resourceAgent.CNC4Agent", "resourceAgent.ConveyorAgent"}; //Classes for each resource agent 
 
 			AID[] resourceAgents = new AID[RA_names.length];
@@ -127,7 +127,7 @@ public class InitializeResourceAgents extends Agent {
 			
 			//Cell 2 states
 			ProductState conv2 = new ProductState("Conveyor2", null, new PhysicalProperty(new Point(1,0)));
-			ProductState cnc3 = new ProductState("CNC4", null, new PhysicalProperty(new Point(1,2)));
+			ProductState cnc3 = new ProductState("CNC3", null, new PhysicalProperty(new Point(1,2)));
 			ProductState cnc3_p2 = new ProductState("CNC3-Machined2", new PhysicalProperty("p2"), new PhysicalProperty(new Point(1,2)));
 			ProductState cnc3_p3 = new ProductState("CNC3-Machined3", new PhysicalProperty("p3"), new PhysicalProperty(new Point(1,2)));
 			ProductState cnc3_p4 = new ProductState("CNC3-Machined4", new PhysicalProperty("p4"), new PhysicalProperty(new Point(1,2)));
@@ -277,13 +277,16 @@ public class InitializeResourceAgents extends Agent {
 				WatchRAVariableTable watchVariables = new WatchRAVariableTable();
 				
 				for (int j=0;j<statesForRAs[i].length;j++) {
-					watchVariables.put(watchVariableNames[i][j], statesForRAs[i][j], 100, true, 19000);
+					watchVariables.put(watchVariableNames[i][j], statesForRAs[i][j], 100, true, 1000);//monitorperiod*10
 				}
 				
 				ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 				msg.addReceiver(resourceAgents[i]);
-				try { msg.setContentObject(watchVariables);}
-				catch (IOException e) {e.printStackTrace();}
+				try { 
+					msg.setContentObject(watchVariables);
+					Thread.sleep(100);
+				}
+				catch (IOException | InterruptedException e) {e.printStackTrace();}
 				send(msg);
 					
 			}			
