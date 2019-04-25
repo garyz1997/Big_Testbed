@@ -1,4 +1,5 @@
-/resourceAgent/
-/JEasyOPC/
+/sharedInformation/
 /startup/
+/JEasyOPC/
 /initializingAgents/
+/resourceAgent/

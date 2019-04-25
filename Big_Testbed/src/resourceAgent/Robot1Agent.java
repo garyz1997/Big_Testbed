@@ -16,10 +16,10 @@ public class Robot1Agent extends ResourceAgent{
 	private HashMap<String, String> varToPLC = new HashMap<>();
 	//edit::: ReadWriteJADE plcConnection;
 	public Robot1Agent() { //Mapping the PLC tags to the Robot 1 events
-		varToPLC.put("PerformEvent_conv1_cnc1", "CONV1_CNC1");
-		varToPLC.put("PerformEvent_cnc1_conv1", "CNC1_CONV1");
-		varToPLC.put("PerformEvent_cnc2_conv1", "CNC2_CONV1");
-		varToPLC.put("PerformEvent_conv1_cnc2", "CONV1_CNC2");
+		varToPLC.put("PerformEvent_conv1_cnc1p1", "CONV1_CNC1");
+		varToPLC.put("PerformEvent_cnc1p1_conv1", "CNC1_CONV1");
+		varToPLC.put("PerformEvent_cnc2p2_conv1", "CNC2_CONV1");
+		varToPLC.put("PerformEvent_conv1_cnc2p2", "CONV1_CNC2");
 		
 		String[] tags = {"CONV1_CNC1","CNC1_CONV1","CNC2_CONV1","CONV1_CNC2"};
 		//edit::: plcConnection = new ReadWriteJADE(tags);
@@ -46,29 +46,31 @@ public class Robot1Agent extends ResourceAgent{
 		this.send(reqWriteTag);
 		System.out.println("Sent write request for the tag: " + variableName);
 		 // wait until a reply is received TODO: MIGHT NEED TO SEPARATE THIS OUT INTO A CYCLIC BEHAVIOR THAT DETECTS IF A MESSAGE IS RECEIVED
-		MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+		MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.AGREE);
 		ACLMessage response = null;
 		boolean done = false;
-		 while (!done) { //  SKETCHY PARTS HERE
-			 response = receive(mt);
-			 if (response == null) {
-				 continue;
-			 }
-			 if (response.getOntology() == "Write") {
-				 String tag = response.getContent();
-				 if (response.getContent() == "1") {
-					 System.out.println("Tag value for " + variableName + " written ");
-				 }
-				 else {
-					 System.out.println("Tag value for " + variableName + " could not be written ");
-				 }
-				 done = true;
-			 }
-			 else {
-				 putBack(response);
-			 }
-		 }
-		 	 
+		while (!done) { //  SKETCHY PARTS HERE
+			response = receive(mt);
+			if (response == null) {
+				System.out.println("[Robot1Agent] null response");
+				continue;
+			}
+			if (response.getOntology() == "Write") {
+				String tag = response.getContent();
+				if (response.getContent().equals("1")) {
+					System.out.println("Tag value for " + variableName + " written ");
+				}
+				else {
+					System.out.println("Tag value for " + variableName + " could not be written ");
+				}
+				done = true;
+			}
+			else {
+				putBack(response);
+			}
+		}
+
+		 System.out.println("[Robot1Agent] Completed event");
 		 
 		//System.out.println(variableName+variableSet);
 		//edit::: plcConnection.uninit();

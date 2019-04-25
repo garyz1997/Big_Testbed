@@ -148,6 +148,8 @@ public class ResourceAgent extends Agent {
 	
 	/**
 	 * Wait for resource capabilities. Remove behavior after capabilities are initialized.
+	 * Set a directed sparse graph of capabilities, what edges the RA can fulfill and what Product States
+	 * Maybe by communicating with the PA
 	 */
 	private class WaitForCapabilities extends SimpleBehaviour{ 
 		private static final long serialVersionUID = 4863610712056640738L;
@@ -159,6 +161,8 @@ public class ResourceAgent extends Agent {
 				try {
 					//If the message are resource capabilities
 					if (msg.getContentObject().getClass().getName().contains("Capabilities")) {
+						System.out.println("[" + myAgent.getAID().getLocalName() + "] obtained capabilities message");
+						//setResourceCapabilities set the capabilities of the RA on the graph
 						setResourceCapabilities((Capabilities) msg.getContentObject());
 						
 						//Function for shortest path (time based)
@@ -169,7 +173,9 @@ public class ResourceAgent extends Agent {
 						System.out.println("Capabilities set for: " + myAgent.getAID().getLocalName());
 					}
 					else {
+						System.out.println("waitforcapabilities putback " + msg.getOntology());
 						putBack(msg);
+						System.out.println("[" + myAgent.getAID().getLocalName() + "] putback message that was not capabilities");
 					}
 				} catch (UnreadableException e) {
 					myAgent.doDelete(); e.printStackTrace();
@@ -187,8 +193,9 @@ public class ResourceAgent extends Agent {
 	}
 	
 	/**
-	 * Action that waits for the set-up to let the RA know its neighbors.
+	 * Action that waits for the set-up to let the RA know its neighbors. Neighbors have direct edge with the RA
 	 * Note that you can keep running this action and keep adding other RAs when they enter the system
+	 * Let all neighboring RAs know your own capabilities
 	 */
 	private class WaitForNeighbors extends TickerBehaviour{
 
@@ -211,11 +218,13 @@ public class ResourceAgent extends Agent {
 
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
 			ACLMessage msg = myAgent.receive(mt);		
+			//to make sure it does not interfere with the messages OPCLayer sends to the specific RAs
 			if(msg != null && !msg.getSender().getLocalName().equals("OPCLayer")){
 				try {
 					//If this is a capabilities table (RA and Capabilties pair)
 					//System.out.println(msg.getSender().getLocalName());
 					if (msg.getContentObject().getClass().getName().contains("CapabilitiesTable")) {
+						System.out.println("[" + myAgent.getAID().getLocalName() + "] obtained capability table message");
 						CapabilitiesTable capTable = (CapabilitiesTable) msg.getContentObject();
 						
 						//For each possible neighbor
@@ -249,7 +258,9 @@ public class ResourceAgent extends Agent {
 
 					}
 					else {
+						System.out.println("waitforneighbors " + msg.getOntology());
 						putBack(msg);
+						System.out.println("[" + myAgent.getAID().getLocalName() + "] putback message that was not neighbors");
 					}
 				} catch (UnreadableException e) {
 					e.printStackTrace();
@@ -277,7 +288,7 @@ public class ResourceAgent extends Agent {
 			if(msg != null && !msg.getSender().getLocalName().equals("OPCLayer")){
 				try {
 					if (msg.getContentObject().getClass().getName().contains("WatchRAVariableTable")) {
-						
+						System.out.println("[" + myAgent.getAID().getLocalName() + "] obtained watchRA variable table");
 						// Set up the mapping from a variable to a product state
 						WatchRAVariableTable watchVariableTable = (WatchRAVariableTable) msg.getContentObject();				
 						String[] tags = new String[watchVariableTable.getStateMapping().keySet().size()];
@@ -304,17 +315,21 @@ public class ResourceAgent extends Agent {
 											watchVariableTable.getInitializeMapping().get(key),
 												watchVariableTable.getCreatePeriod().get(key)));
 						}						
-						System.out.println(this.getAgent().getLocalName() + " created new PLC connection");
+						//System.out.println(this.getAgent().getLocalName() + " created new PLC connection");
+						/*
 						for (String tag : tags) {
 							System.out.println(myAgent.getAID().getLocalName()+ " " + tag);
 						}
+						*/
 						//plcConnection = new ReadWriteJADE2(tags);
 						watchVariablesSet = true;
 						System.out.println("Watch variables set for: " + myAgent.getAID().getLocalName());
 					}
 
 					else {
+						System.out.println("waitforwatchvariables " + msg.getOntology());
 						putBack(msg);
+						System.out.println("[" + myAgent.getAID().getLocalName() + "] putback message that was not watch variables");
 					}
 				} catch (UnreadableException e) {
 					e.printStackTrace();
@@ -362,12 +377,13 @@ public class ResourceAgent extends Agent {
 		public void action() {
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
 			ACLMessage msg = myAgent.receive(mt);
+			//System.out.println("["+myAgent.getLocalName()+"] got request");
 			String response = "False";
 			if(msg != null){	
 				try {
 					if (msg.getContentObject().getClass().getName().contains("RequestAction")) {
 						query((RequestAction) msg.getContentObject());
-						//System.out.println(msg.getSender().getLocalName() +"requests from "+ myAgent.getLocalName()+":"+((RequestAction) msg.getContentObject()).getQueriedEdge());
+						System.out.println(msg.getSender().getLocalName() +" requests from "+ myAgent.getLocalName()+":"+((RequestAction) msg.getContentObject()).getQueriedEdge());
 						//response = "True";
 					}
 					else if (msg.getContentObject().getClass().getName().contains("RequestBid")) {
@@ -385,6 +401,7 @@ public class ResourceAgent extends Agent {
 
 					else {
 						putBack(msg);
+						System.out.println("[" + myAgent.getAID().getLocalName() + "] putback message that was not requests");
 					}
 					
 				} catch (UnreadableException e) {
@@ -460,25 +477,33 @@ public class ResourceAgent extends Agent {
 					Boolean varValue = Boolean.valueOf(response.getContent());
 					//System.out.println("Tag value received for tag " + response.getOntology() + ": " + varValue + " Content: " + response.getContent());
 					//operate on the response
-					if(readTimer > (10 * monitorPeriod) && varValue && notifyAgentWhenState.containsKey(productState)) {
+					//System.out.println("["+myAgent.getLocalName()+"] Checking " +variable+" "+readTimer+" "+10 * monitorPeriod+" "+varValue+" "+notifyAgentWhenState.containsKey(productState)+"keyset: "+notifyAgentWhenState.keySet()+ " "+ productState);
+					if (readTimer > (10 * monitorPeriod) && varValue && notifyAgentWhenState.containsKey(productState)) {
 						//Reset read timer
 						readTimer = 0;
-						
+						//wait edgetime to inform PA
+						try {
+							Thread.sleep(10000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 						//Reset the counter
 						lastCreated = 0;
 						//Message to inform the PA about the product state
-						
+						System.out.println("notifyAgentWhenState");
 						for(AID productAgent:notifyAgentWhenState.get(productState).keySet()) {
+
+							System.out.println("notifyAgentWhenState1");
 							informPA(productAgent, notifyAgentWhenState.get(productState).get(productAgent));
 							notifyAgentWhenState.remove(productState);
 						}
 					}
 					
 					else if (lastCreated > createPeriod && varValue && createNew) {
-						
 						System.out.println(""+myAgent.getLocalName()+ " is creating when lastCreated is " + lastCreated + "["+variable+"=" +varValue+" createperiod: "+ createPeriod +"]");
 						lastCreated = 0;
-						String ipaName = "(initPA)" + myAgent.getAID().getLocalName().substring(4) + "_" + variable;
+						String ipaName = "(initPA)" + myAgent.getAID().getLocalName() + "_" + variable;
 						//System.out.println(ipaName);
 						//Get the Agent controller
 						AgentController ac;
@@ -507,6 +532,7 @@ public class ResourceAgent extends Agent {
 					}
 				}
 				else {
+					//System.out.println("physicalsystemmonitoring " + response.getOntology());
 					putBack(response);
 				}				
 			}
@@ -732,7 +758,6 @@ public class ResourceAgent extends Agent {
 	public boolean query(RequestAction action) {
 		ResourceEvent queriedEdge = action.getQueriedEdge();
 		AID productAgent = action.getProductAgent();
-		
 		//Find the desired edge
 		ResourceEvent desiredEdge = null;
 		for (ResourceEvent edge : this.getResourceCapabilities().getEdges()){
@@ -754,6 +779,7 @@ public class ResourceAgent extends Agent {
 			HashMap<AID,ResourceEvent> edgeProductMap = new HashMap<AID,ResourceEvent>();
 			edgeProductMap.put(productAgent, desiredEdge);
 			this.notifyAgentWhenState.put(desiredEdge.getChild(), edgeProductMap);
+			System.out.println(getLocalName()+"Putting state in notifyAgentWhenState"+desiredEdge.getChild()+edgeProductMap);
 			return true;
 		}
 		

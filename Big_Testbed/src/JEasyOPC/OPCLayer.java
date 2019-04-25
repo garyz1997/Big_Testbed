@@ -50,17 +50,16 @@ public class OPCLayer extends Agent
 	//}
 	
 	//Hashmap<String,Tags> OPCList = {Agent_name, Tags} 
+	MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
 	private HashMap<String, Tags> OPCList = new HashMap<>();
+	int data;
 	ReadWriteJADE plcConnection;//delete the helloAgent after testing
-	String[] agentNames = {"Robot1Agent", "CNC1Agent", "CNC2Agent", "Robot2Agent", "CNC3Agent", "CNC4Agent", "ConveyorAgent"};
+	//String[] agentNames = {"helloAgent", "helloAgent2", "CNC2Agent", "Robot2Agent", "CNC3Agent", "CNC4Agent", "ConveyorAgent"};
+	String[] agentNames = {"Robot1Agent", "Robot2Agent", "ConveyorAgent"};
 	String[][] agentTags = {//TODO: add watchvariable tags
-									{"Fanuc_Rbt_C1:O.Data[0].1","Fanuc_Rbt_C1:O.Data[0].3","Fanuc_Rbt_C1:O.Data[0].2","Fanuc_Rbt_C1:O.Data[0].0", "Robot1_DroppedP1","Robot1_DroppedP2"},
-									{"CNC1Machined0","CNC1Machined1","CNC1Machined2"},
-									{"CNC2Machined1","CNC2Machined2","CNC2Machined3"},
-									{"Fanuc_Rbt_C2:O.Data[0].0","Fanuc_Rbt_C2:O.Data[0].2","Fanuc_Rbt_C2:O.Data[0].3","Fanuc_Rbt_C2:O.Data[0].1", "Robot2_DroppedP3","Robot2_DroppedP4"},
-									{"CNC3Machined2","CNC3Machined3","CNC3Machined4"},
-									{"CNC4Machined3","CNC4Machined4","CNC4Machined5"},
-									{"C1HoldBack.Ret","C2HoldBack.Ret","C3HoldBack.Ret","t1.DN", "C1_N011:I.Data[6].7","Conv_N053:I.Data[3].1","Conv_N053:I.Data[3].3", "ConveyorEnd"}
+									{"CONV1_CNC1","CNC1_CONV1","CNC2_CONV1","CONV1_CNC2", "CNC1Machined2", "CNC2Machined2", "RFID_N054:I.Channel[1].TagPresent"},
+									{"CONV2_CNC3","CNC3_CONV2","CNC4_CONV2","CONV2_CNC4", "CNC3Machined3", "CNC4Machined4", "RFID_N055:I.Channel[0].TagPresent"},
+									{"CONV1_CONV2","CONV2_CONV3","CONV3_CONV1","CONV3_END", "C1_N011:I.Data[6].7","Conv_N053:I.Data[3].1","Conv_N053:I.Data[3].3", "ConveyorEnd"}
 								};
 	public OPCLayer()
 	{
@@ -71,7 +70,7 @@ public class OPCLayer extends Agent
 	{
 		System.out.println("CREATED: OPCLayer "+getAID().getLocalName());
 
-		doSuspend();//Suspend Agent upon creation. Resume Agent via GUI to start it up.
+		//doSuspend();//Suspend Agent upon creation. Resume Agent via GUI to start it up.
 		//initialize all agents and their tags
 		for (int i = 0; i < agentTags.length;i++)
 		{
@@ -83,17 +82,9 @@ public class OPCLayer extends Agent
 			OPCList.put(agentNames[i], t);
 		}
 		//TODO: get all the tag values and put them in tags
-		String[] tagListforConnection = {"Fanuc_Rbt_C1:O.Data[0].1","Fanuc_Rbt_C1:O.Data[0].3","Fanuc_Rbt_C1:O.Data[0].2","Fanuc_Rbt_C1:O.Data[0].0",
-				"Robot1_DroppedP1","Robot1_DroppedP2",
-				"CNC1Machined0","CNC1Machined1","CNC1Machined2",
-				"CNC2Machined1","CNC2Machined2","CNC2Machined3",				
-				"Fanuc_Rbt_C2:O.Data[0].0","Fanuc_Rbt_C2:O.Data[0].2","Fanuc_Rbt_C2:O.Data[0].3","Fanuc_Rbt_C2:O.Data[0].1",
-				"Robot2_DroppedP3","Robot2_DroppedP4",
-				"CNC3Machined2","CNC3Machined3","CNC3Machined4",
-				"CNC4Machined3","CNC4Machined4","CNC4Machined5",
-				"C1HoldBack.Ret","C2HoldBack.Ret","C3HoldBack.Ret","t1.DN",
-				"C1_N011:I.Data[6].7","Conv_N053:I.Data[3].1","Conv_N053:I.Data[3].3", "ConveyorEnd"
-				};
+		String[] tagListforConnection = {"CONV1_CNC1","CNC1_CONV1","CNC2_CONV1","CONV1_CNC2", "CNC1Machined2", "CNC2Machined2", "RFID_N054:I.Channel[1].TagPresent",
+				"CONV2_CNC3","CNC3_CONV2","CNC4_CONV2","CONV2_CNC4", "CNC3Machined3", "CNC4Machined4", "RFID_N055:I.Channel[0].TagPresent",
+				"CONV1_CONV2","CONV2_CONV3","CONV3_CONV1","CONV3_END", "C1_N011:I.Data[6].7","Conv_N053:I.Data[3].1","Conv_N053:I.Data[3].3", "ConveyorEnd"};
 		
 		String registerMessage = "["+this.getLocalName()+"] Trying to register ";
 		for (String tag : tagListforConnection)
@@ -102,7 +93,7 @@ public class OPCLayer extends Agent
 		}
 		//System.out.println(registerMessage);
 		plcConnection = new ReadWriteJADE(tagListforConnection, 1000, "OPCLayer");
-		System.out.println("registered!");
+		System.out.println("[OPCLayer] registered!");
 		
 		//initialize all tags
 		for (int i = 0; i < agentTags.length;i++)
@@ -125,7 +116,7 @@ public class OPCLayer extends Agent
 		//Start all of the behaviors
 		this.addBehaviour(new updateTags());
 		this.addBehaviour(new readWriteTags());
-		
+		System.out.println("[OPCLayer] started");
 	
 	}
 	
@@ -133,20 +124,23 @@ public class OPCLayer extends Agent
 	private class readWriteTags extends CyclicBehaviour {
 		@Override
 		public void action() {
-			//Check for requests from agents to read or write to tags
-			int data;
-			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
-			ACLMessage msg = myAgent.receive(mt);
+			//System.out.println("ll");
+			ACLMessage msg = receive(mt);//Check for requests from agents to read or write to tags
 			if(msg != null){
-				//prepare message response
-				ACLMessage response = new ACLMessage(ACLMessage.INFORM);
-				response.addReceiver(msg.getSender());
-				response.setSender(myAgent.getAID());
-				
 				if (msg.getOntology().contains("Read")) {
+					//System.out.println("rec"+msg.getContent());
+					long start = System.currentTimeMillis();
+					//System.out.println("OPC receive time for tag "+ msg.getContent() + " : "+ String.valueOf(start));
 					//Read the tag specified in the content for the sender agent
 					//System.out.println("requesting tag " + msg.getContent() + " from " + msg.getSender().getLocalName());
-					
+					//prepare message response
+					ACLMessage response = new ACLMessage(ACLMessage.INFORM);
+					response.addReceiver(msg.getSender());
+					response.setSender(myAgent.getAID());
+					//System.out.println("sender: " +msg.getSender());
+					//System.out.println(OPCList.get(msg.getSender()));
+					//System.out.println(OPCList.get(msg.getSender().getLocalName()));
+					//System.out.println(OPCList.get(msg.getSender().getLocalName()).getTagValue(msg.getContent()));
 					if (OPCList.get(msg.getSender().getLocalName()).getTagValue(msg.getContent()) != -1) {
 						data = OPCList.get(msg.getSender().getLocalName()).getTagValue(msg.getContent());
 						response.setOntology(msg.getContent());
@@ -156,8 +150,9 @@ public class OPCLayer extends Agent
 						else {
 							response.setContent("false");
 						}
-						myAgent.send(response);					
-						//System.out.println("SENTTTTTTT");
+						long end = System.currentTimeMillis();
+						//System.out.println("OPC send time for tag "+ msg.getContent() + " : "+ String.valueOf(end));
+						myAgent.send(response);				
 					}
 					
 							//tags.get(msg.getContent());
@@ -167,11 +162,23 @@ public class OPCLayer extends Agent
 				}
 				else if (msg.getOntology().contains("Write")) {
 					//TODO: code to check agent and write tag value
+					//prepare message response
+					long start = System.currentTimeMillis();
+					System.out.println("[WRITE] OPC receive time for tag "+ msg.getContent() + " : "+ String.valueOf(start));
+					
+					ACLMessage response = new ACLMessage(ACLMessage.AGREE);
+					response.addReceiver(msg.getSender());
+					response.setSender(myAgent.getAID());
 					String variableName = msg.getContent();
 					response.setOntology("Write");
 					try {
-						plcConnection.writeTag(variableName, 1);//TODO:get actual variable name and value
+						plcConnection.writeTag(variableName, 1);//TODO:get actual variable name and value						
 						response.setContent("1");
+						
+						long end = System.currentTimeMillis();//time measurement
+						System.out.println("[WRITE] OPC send time for tag "+ msg.getContent() + " : "+ String.valueOf(end));
+						
+						//System.out.println("[OPCLayer] Sending response");
 						send(response);
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -180,13 +187,17 @@ public class OPCLayer extends Agent
 					}					
 				}
 				else {
+					System.out.println("not read or write: "+msg.getOntology());
 					putBack(msg);
 				}
-				
 			}
-			else{
-				block();
+			/*
+			else
+			{
+			System.out.println("OPCLayer blocking");				
 			}
+			block();
+			*/
 		}
 	}
 	

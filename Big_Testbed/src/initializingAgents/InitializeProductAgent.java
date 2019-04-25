@@ -55,7 +55,7 @@ public class InitializeProductAgent extends Agent {
 						startingPAParams = (StartingPAParams) msg.getContentObject();
 						
 						ProductionPlan pp = getProductionPlan();
-						String paName = "(PA)" + startingPAParams.getID().substring(4);
+						String paName = "(PA)" + startingPAParams.getID();
 						
 						AgentController ac;
 						try {
@@ -96,6 +96,7 @@ public class InitializeProductAgent extends Agent {
 			System.out.println(startingPAParams.getID().length());
 			if (true) {//randomize part production plans TODO: remove
 				pp.addNewSet(new PhysicalProperty("p3"));
+				pp.addNewSet(new PhysicalProperty("conveyor"));
 			}
 
 			pp.addNewSet(new PhysicalProperty("end"));

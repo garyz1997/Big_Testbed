@@ -73,7 +73,7 @@ public class ProductAgent extends Agent {
 	
 	protected void setup(){
 		System.out.println("CREATED: ProductAgent "+getAID().getLocalName());
-		
+		doSuspend();//Suspend Agent upon creation. Resume Agent via GUI to start it up.
 		// Get information about the product through the arguments
 		Object[] args = getArguments();
 	
@@ -115,7 +115,7 @@ public class ProductAgent extends Agent {
 						
 						//Initialize the Knowledge Base
 						productionPlan = setupParams.getProductionPlan(); // Production Plan
-						System.out.println("Production plan: " + productionPlan.toString());
+						System.out.println("[" + myAgent.getLocalName( )+ "] Production plan: " + productionPlan.toString());
 						exitPlan = setupParams.getExitPlan(); 
 						productHistory = new ProductHistory(myAgent.getAID(),setupParams.getStartingNode(),setupParams.getStartingResource()); //Product History
 						environmentModel = new EnvironmentModel(myAgent.getAID(),setupParams.getStartingNode(),setupParams.getStartingResource()); // Environment Model
@@ -191,7 +191,7 @@ public class ProductAgent extends Agent {
 		@Override
 		public void action() {
 			if (finishedTask.equals("Exploration")) {
-				System.out.println("Exploration finished for: " +myAgent.getLocalName());
+				System.out.println("[" + myAgent.getLocalName( )+ "] Exploration finished");
 				if (newEnvironmentModel.isEmpty()) {exit("Empty Environmental Model from Exploration phase");}
 				else {
 					environmentModel.clear();
@@ -594,14 +594,17 @@ public class ProductAgent extends Agent {
 						
 						//If there is no next action, find a new plan by telling the Decision Director that Execution has been finished
 						if (plan.isEmpty(getCurrentTime())){
+							System.out.println("plan is Empty,find a new plan by telling the Decision Director that Execution has been finished");
 							myAgent.addBehaviour(new DecisionDirector("Execution"));
 						}
 						else{
 							//Start the next step of execution
+							System.out.println("Plan not empty, Start the next step of execution");
 							addBehaviour(new Execution());
 						}
 					}
 					else {
+						System.out.println("Plan Name: "+msg.getContentObject().getClass().getName());
 						putBack(msg);
 					}
 				} catch (UnreadableException e) {
@@ -646,8 +649,8 @@ public class ProductAgent extends Agent {
 		public waitForQuery(Agent a, long timeout, ResourceEvent nextAction) {
 			super(a, timeout);
 			this.nextAction = nextAction;
-			
 			lastActionQueriedTime = getCurrentTime();
+			System.out.println("waitForQuery CONSTRUCTOR"+Integer.toString(lastActionQueriedTime));
 			
 			// Print it out if the PA is waiting too long
 			if(timeout<0 || timeout>4000) {
@@ -656,6 +659,7 @@ public class ProductAgent extends Agent {
 		}
 		
 		protected void onWake (){
+			System.out.println("waitForQuery onWAKE"+Integer.toString(lastActionQueriedTime));
 			//Set the queried edge		
 			queriedEdge = nextAction;
 			
@@ -664,7 +668,7 @@ public class ProductAgent extends Agent {
 			//Query for start of execution (request for bids)
 			ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
 			msg.addReceiver(nextAction.getEventAgent());	
-			System.out.println("Requesting action: " + nextAction.getActiveMethod());
+			System.out.println("[" + myAgent.getLocalName( )+ "] Requesting action: " + nextAction.getActiveMethod());
 			try { msg.setContentObject(requestAction);}
 			catch (IOException e) {e.printStackTrace();}
 			send(msg);
@@ -689,16 +693,21 @@ public class ProductAgent extends Agent {
 		
 		public checkForNoRaResponse(Agent a, long timeout, int checkActionQueriedTime, RequestAction requestAction) {
 			super(a, timeout);
+			System.out.println("checkForNoRaResponse CONSTRUCTOR"+Integer.toString(lastActionQueriedTime));
 			this.checkActionQueriedTime = checkActionQueriedTime;
 			this.requestAction = requestAction;
 		}
 		
 		protected void onWake (){
+			System.out.println("checkForNoRaResponse onWAKE"+Integer.toString(lastActionQueriedTime)+" "+Integer.toString(checkActionQueriedTime));
+			//check informPA message sending before uncommenting this. Otherwise assume event triggered (dont need to check part arrived)
+			/*
 			if (checkActionQueriedTime==lastActionQueriedTime) {
-				System.out.println("No response from " + requestAction.getQueriedEdge().getEventAgent().getLocalName() + 
-						" for" + myAgent.getLocalName() + requestAction.getQueriedEdge().getActiveMethod());
+				System.out.println("[" + myAgent.getLocalName( )+ "] No response from " + requestAction.getQueriedEdge().getEventAgent().getLocalName() + 
+						" for " + myAgent.getLocalName() + " for event " + requestAction.getQueriedEdge().getActiveMethod());
 				exit("No response from RAs");
 			}
+			*/
 		}
 	}
 	
