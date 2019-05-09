@@ -50,6 +50,30 @@ Robot2Agent
 
 The OPCLayer is the handshake between the agents and the PLC. Agents request tags from this layer to create products and to performs actions on products.
 
+### Trial run
+
+Currently, each product is given the physical property "p3", and then "conveyor", to accomplish. This can be changed in initializingAgents/InitializeProductAgent.java: 
+```
+		private ProductionPlan getProductionPlan() {
+			ProductionPlan pp = new ProductionPlan();
+
+			Random rand = new Random();
+			//String paramID = startingPAParams.getID();
+			//Boolean randomSet = paramID[paramID.length()-1].equals("3");
+			System.out.println(startingPAParams.getID().length());
+			if (true) {//randomize part production plans TODO: remove
+				pp.addNewSet(new PhysicalProperty("p3"));
+				pp.addNewSet(new PhysicalProperty("conveyor"));
+			}
+
+			pp.addNewSet(new PhysicalProperty("end"));
+			
+			//System.out.println("Production plan for " + startingPAParams.getID()+":"+pp);
+			return pp;
+		}
+ ```
+During the trial run, place a product onto the conveyor, resume all resource agesnts and the created product agent. The product will figure out a path to CNC3 and then back to the conveyor.
+
 ### Future tasks/suggestions
 
 * The messages being sent between RAs and OPCLayer to monitor tags are creating a rapidly growing message queue, slowing down execution. A suggestion is to change the requesting of tags from RAs to the pushing of changes in tags from the OPCLayer to the RAs.
@@ -61,3 +85,7 @@ The OPCLayer is the handshake between the agents and the PLC. Agents request tag
 * Change PLC to allow for retraction of Cell 3 stop to allow product to circulate
 
 * Find a better way to keep track of product agents, to not make new PAs for the same product
+
+* Obtain physical property tasks via RFID instead of hardcoding in InitializeProductAgents
+
+* Remove old code in comments
